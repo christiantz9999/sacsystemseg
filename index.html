@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SAC Web Profissional - SystemSeg</title>
+  <meta name="theme-color" content="#07111f" />
+
+  <!-- Bibliotecas externas -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#060b14;
+      --bg2:#0a1324;
+      --card:#101b2f;
+      --card2:#13223a;
+      --line:rgba(255,255,255,.10);
+      --text:#eaf2ff;
+      --muted:#9fb1c8;
+      --brand:#38bdf8;
+      --brand2:#14f195;
+      --danger:#ff4d6d;
+      --warn:#fbbf24;
+      --ok:#22c55e;
+      --shadow:0 25px 80px rgba(0,0,0,.45);
+      --radius:24px;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter,Segoe UI,Arial,sans-serif;
+      background:
+        radial-gradient(circle at 20% 10%,rgba(56,189,248,.18),transparent 30%),
+        radial-gradient(circle at 85% 15%,rgba(20,241,149,.13),transparent 26%),
+        linear-gradient(135deg,var(--bg),var(--bg2));
+      color:var(--text);
+      min-height:100vh;
+    }
+
+    body.light{
+      --bg:#edf4ff;
+      --bg2:#f8fbff;
+      --card:#ffffff;
+      --card2:#f3f8ff;
+      --line:rgba(0,0,0,.10);
+      --text:#0b1728;
+      --muted:#53657c;
+      --shadow:0 22px 60px rgba(20,40,80,.15);
+    }
+
+    .hidden{display:none!important}
+    .app{max-width:1280px;margin:auto;padding:24px}
+    .topbar{
+      display:flex;align-items:center;justify-content:space-between;gap:16px;
+      padding:16px 18px;border:1px solid var(--line);border-radius:var(--radius);
+      background:rgba(16,27,47,.78);backdrop-filter:blur(18px);box-shadow:var(--shadow);
+      position:sticky;top:14px;z-index:20;
+    }
+    body.light .topbar{background:rgba(255,255,255,.8)}
+    .brand{display:flex;align-items:center;gap:14px}
+    .logo{
+      width:58px;height:58px;border-radius:18px;
+      background:linear-gradient(135deg,var(--brand),var(--brand2));
+      display:grid;place-items:center;color:#03111f;font-weight:900;font-size:20px;
+      box-shadow:0 10px 30px rgba(56,189,248,.25);
+      overflow:hidden;
+    }
+    .logo img{width:100%;height:100%;object-fit:cover}
+    .brand h1{margin:0;font-size:22px;letter-spacing:.3px}
+    .brand p{margin:3px 0 0;color:var(--muted);font-size:13px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    button,.btn{
+      border:0;border-radius:15px;padding:12px 16px;
+      background:linear-gradient(135deg,var(--brand),#2563eb);
+      color:white;font-weight:800;cursor:pointer;transition:.2s;
+      box-shadow:0 12px 26px rgba(37,99,235,.22);
+    }
+    button:hover{transform:translateY(-1px);filter:brightness(1.05)}
+    button.secondary{background:var(--card2);color:var(--text);box-shadow:none;border:1px solid var(--line)}
+    button.danger{background:linear-gradient(135deg,var(--danger),#b91c1c)}
+    button.ok{background:linear-gradient(135deg,var(--ok),#059669)}
+    button.warn{background:linear-gradient(135deg,var(--warn),#f97316);color:#191005}
+    button:disabled{opacity:.55;cursor:not-allowed;transform:none}
+
+    .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:22px;margin-top:22px}
+    .card{
+      background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.03));
+      border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+      padding:24px;backdrop-filter:blur(16px);
+    }
+    body.light .card{background:rgba(255,255,255,.82)}
+    .hero h2{font-size:36px;margin:0 0 10px;line-height:1.05}
+    .hero p{color:var(--muted);line-height:1.6}
+    .badges{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+    .badge{
+      border:1px solid var(--line);background:rgba(255,255,255,.06);
+      padding:9px 12px;border-radius:999px;color:var(--muted);font-size:13px;font-weight:700;
+    }
+
+    label{display:block;margin:14px 0 7px;color:var(--muted);font-size:13px;font-weight:800}
+    input,textarea,select{
+      width:100%;padding:14px 15px;border-radius:15px;border:1px solid var(--line);
+      background:rgba(3,10,22,.55);color:var(--text);outline:none;font-size:15px;
+    }
+    body.light input,body.light textarea,body.light select{background:white}
+    textarea{min-height:118px;resize:vertical}
+    .formrow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .fullbtn{width:100%;margin-top:18px;font-size:16px;padding:15px}
+
+    .client-panel,.admin-panel{margin-top:22px}
+    .statusbox{
+      display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0;
+    }
+    .metric{
+      background:rgba(255,255,255,.055);border:1px solid var(--line);
+      border-radius:18px;padding:14px;
+    }
+    .metric small{color:var(--muted);display:block;margin-bottom:7px}
+    .metric strong{font-size:22px}
+    .queue-list{display:flex;flex-direction:column;gap:12px;max-height:420px;overflow:auto;padding-right:5px}
+    .ticket{
+      background:rgba(255,255,255,.055);border:1px solid var(--line);border-radius:18px;padding:14px;
+      display:grid;gap:8px;
+    }
+    .ticket.active{border-color:rgba(20,241,149,.55);box-shadow:0 0 0 1px rgba(20,241,149,.18) inset}
+    .ticket.waiting{border-color:rgba(251,191,36,.45)}
+    .ticket.closed{opacity:.72}
+    .ticket-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+    .pill{font-size:12px;font-weight:900;padding:6px 9px;border-radius:999px;background:rgba(56,189,248,.15);color:#7dd3fc}
+    .pill.ok{background:rgba(34,197,94,.14);color:#86efac}
+    .pill.warn{background:rgba(251,191,36,.16);color:#fde68a}
+    .pill.danger{background:rgba(255,77,109,.15);color:#fda4af}
+
+    .chat{
+      border:1px solid var(--line);border-radius:20px;overflow:hidden;background:rgba(0,0,0,.14);
+    }
+    .chat-header{
+      padding:14px 16px;border-bottom:1px solid var(--line);
+      display:flex;justify-content:space-between;gap:10px;align-items:center;background:rgba(255,255,255,.04);
+    }
+    .messages{height:380px;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+    .msg{
+      max-width:78%;padding:11px 13px;border-radius:17px;line-height:1.45;white-space:pre-wrap;
+      border:1px solid var(--line);
+    }
+    .msg.client{align-self:flex-start;background:rgba(56,189,248,.12)}
+    .msg.agent{align-self:flex-end;background:rgba(20,241,149,.12)}
+    .msg.system{align-self:center;background:rgba(251,191,36,.12);color:#fde68a;max-width:95%;font-size:13px;text-align:center}
+    .msg small{display:block;margin-top:5px;color:var(--muted);font-size:11px}
+    .chat-send{display:grid;grid-template-columns:1fr auto;gap:10px;padding:12px;border-top:1px solid var(--line)}
+    .chat-send textarea{min-height:48px;max-height:100px}
+
+    .stars{display:flex;gap:8px;font-size:34px;margin:10px 0}
+    .star{cursor:pointer;color:#475569;filter:drop-shadow(0 6px 10px rgba(0,0,0,.25))}
+    .star.active{color:#fbbf24}
+
+    .admin-layout{display:grid;grid-template-columns:360px 1fr;gap:18px}
+    .admin-login{max-width:480px;margin:28px auto}
+    .toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
+    .search{max-width:340px}
+    .config-note{
+      background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.25);
+      border-radius:18px;padding:14px;color:#fde68a;margin-bottom:16px;line-height:1.5;
+    }
+    .footer{text-align:center;color:var(--muted);padding:28px 0 8px;font-size:13px}
+
+    @media(max-width:900px){
+      .grid,.admin-layout,.formrow,.statusbox{grid-template-columns:1fr}
+      .topbar{position:relative;top:auto;align-items:flex-start;flex-direction:column}
+      .hero h2{font-size:29px}
+      .app{padding:14px}
+      .messages{height:330px}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo" id="logoBox">SS</div>
+        <div>
+          <h1>SystemSeg SAC</h1>
+          <p>Atendimento inteligente por ordem de chegada</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="secondary" onclick="toggleTheme()">Tema</button>
+        <button class="secondary" onclick="showClient()">Cliente</button>
+        <button onclick="showAdmin()">Área Administrativa</button>
+      </div>
+    </header>
+
+    <main id="clientHome" class="grid">
+      <section class="card hero">
+        <h2>Central de Atendimento ao Cliente</h2>
+        <p>
+          Abra seu chamado e aguarde na fila. O atendimento é realizado por ordem de chegada.
+          Durante o atendimento, mantenha esta página aberta para receber as mensagens do atendente.
+        </p>
+        <div class="badges">
+          <span class="badge">Fila automática</span>
+          <span class="badge">Chat em tempo real local</span>
+          <span class="badge">Relatório PDF</span>
+          <span class="badge">Avaliação final</span>
+        </div>
+        <div class="statusbox">
+          <div class="metric"><small>Chamados na fila</small><strong id="metricQueue">0</strong></div>
+          <div class="metric"><small>Em atendimento</small><strong id="metricActive">0</strong></div>
+          <div class="metric"><small>Finalizados hoje</small><strong id="metricClosed">0</strong></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 style="margin-top:0">Iniciar atendimento</h2>
+        <label>Nome ou razão social do cliente *</label>
+        <input id="clientName" placeholder="Ex.: João Silva / Empresa LTDA" />
+
+        <label>CPF ou CNPJ <span style="font-weight:500;color:var(--muted)">(opcional)</span></label>
+        <input id="clientDoc" placeholder="CPF ou CNPJ" />
+
+        <div class="formrow">
+          <div>
+            <label>Telefone para contato *</label>
+            <input id="clientPhone" placeholder="(00) 00000-0000" />
+          </div>
+          <div>
+            <label>WhatsApp <span style="font-weight:500;color:var(--muted)">(opcional)</span></label>
+            <input id="clientWhatsapp" placeholder="(00) 00000-0000" />
+          </div>
+        </div>
+
+        <label>Descreva rapidamente o problema *</label>
+        <textarea id="clientProblem" placeholder="Explique de forma breve o motivo do contato..."></textarea>
+
+        <button class="fullbtn" onclick="startTicket()">Iniciar Atendimento</button>
+      </section>
+    </main>
+
+    <section id="clientPanel" class="client-panel hidden">
+      <div class="card">
+        <div class="toolbar">
+          <div>
+            <h2 style="margin:0">Seu atendimento</h2>
+            <p id="clientStatusText" style="color:var(--muted);margin:5px 0 0"></p>
+          </div>
+          <button class="secondary" onclick="showClient()">Voltar</button>
+        </div>
+
+        <div class="statusbox">
+          <div class="metric"><small>Sua posição na fila</small><strong id="clientPosition">-</strong></div>
+          <div class="metric"><small>Status</small><strong id="clientStatus">-</strong></div>
+          <div class="metric"><small>Inatividade</small><strong id="idleTimer">10:00</strong></div>
+        </div>
+
+        <div id="clientChatBox" class="chat hidden">
+          <div class="chat-header">
+            <strong>Chat com atendente</strong>
+            <span class="pill ok">Você está sendo atendido agora</span>
+          </div>
+          <div id="clientMessages" class="messages"></div>
+          <div class="chat-send">
+            <textarea id="clientMsg" placeholder="Digite sua mensagem..."></textarea>
+            <button onclick="sendClientMessage()">Enviar</button>
+          </div>
+        </div>
+
+        <div id="ratingBox" class="hidden">
+          <h2>Avalie o atendimento</h2>
+          <p style="color:var(--muted)">Sua opinião ajuda a melhorar nosso suporte.</p>
+          <div class="stars" id="stars"></div>
+          <textarea id="ratingComment" placeholder="Comentário opcional sobre o atendimento"></textarea>
+          <button class="ok fullbtn" onclick="sendRating()">Enviar avaliação e finalizar</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="adminHome" class="admin-panel hidden">
+      <div id="adminLogin" class="card admin-login">
+        <h2 style="margin-top:0">Área Administrativa</h2>
+        <p style="color:var(--muted)">Acesse para atender chamados, finalizar atendimentos e gerar relatórios.</p>
+        <label>Senha do atendente</label>
+        <input id="adminPass" type="password" placeholder="Senha padrão: admin123" />
+        <button class="fullbtn" onclick="loginAdmin()">Entrar</button>
+      </div>
+
+      <div id="adminDashboard" class="hidden">
+        <div class="config-note">
+          <strong>Envio de e-mail:</strong> para enviar o PDF automaticamente para
+          <b>systemsegcftv@gmail.com</b>, configure abaixo as chaves do EmailJS no código:
+          <b>EMAILJS_PUBLIC_KEY</b>, <b>EMAILJS_SERVICE_ID</b> e <b>EMAILJS_TEMPLATE_ID</b>.
+          Sem essas chaves, o sistema baixa o PDF localmente.
+        </div>
+
+        <div class="admin-layout">
+          <aside class="card">
+            <div class="toolbar">
+              <h2 style="margin:0">Fila</h2>
+              <button class="secondary" onclick="clearClosed()">Limpar finalizados</button>
+            </div>
+            <input class="search" id="ticketSearch" placeholder="Buscar cliente..." oninput="renderAll()" />
+            <div id="adminQueue" class="queue-list" style="margin-top:14px"></div>
+          </aside>
+
+          <section class="card">
+            <div class="toolbar">
+              <div>
+                <h2 id="adminTicketTitle" style="margin:0">Selecione um atendimento</h2>
+                <p id="adminTicketInfo" style="color:var(--muted);margin:5px 0 0"></p>
+              </div>
+              <div class="actions">
+                <button class="warn" onclick="callNext()">Chamar próximo</button>
+                <button class="ok" onclick="finishSelected()">Finalizar</button>
+              </div>
+            </div>
+
+            <div id="adminSelectedEmpty" style="color:var(--muted);padding:40px;text-align:center;border:1px dashed var(--line);border-radius:20px">
+              Nenhum atendimento selecionado.
+            </div>
+
+            <div id="adminChatArea" class="chat hidden">
+              <div class="chat-header">
+                <strong>Conversa do atendimento</strong>
+                <span id="adminIdlePill" class="pill warn">Inatividade: 10:00</span>
+              </div>
+              <div id="adminMessages" class="messages"></div>
+              <div class="chat-send">
+                <textarea id="adminMsg" placeholder="Digite a resposta ao cliente..."></textarea>
+                <button onclick="sendAdminMessage()">Enviar</button>
+              </div>
+            </div>
+
+            <div id="selectedActions" class="actions hidden" style="margin-top:14px">
+              <button class="secondary" onclick="downloadSelectedPdf()">Baixar PDF</button>
+              <button class="secondary" onclick="sendSelectedReport()">Enviar relatório por e-mail</button>
+              <button class="danger" onclick="cancelSelected()">Cancelar atendimento</button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      Sistema SAC Web em HTML único • Dados salvos no navegador via localStorage
+    </footer>
+  </div>
+
+<script>
+  /* ==========================
+     CONFIGURAÇÕES IMPORTANTES
+     ========================== */
+
+  const COMPANY_NAME = "SystemSeg";
+  const REPORT_EMAIL = "systemsegcftv@gmail.com";
+
+  // Para envio automático real, crie conta em https://www.emailjs.com/
+  // e preencha as 3 constantes abaixo.
+  const EMAILJS_PUBLIC_KEY = "";
+  const EMAILJS_SERVICE_ID = "";
+  const EMAILJS_TEMPLATE_ID = "";
+
+  // Senha simples apenas para uso local. Para produção, use Firebase/Auth ou backend.
+  const ADMIN_PASSWORD = "admin123";
+
+  // Se quiser usar imagem como logo, cole uma URL ou base64 aqui.
+  const LOGO_URL = "";
+
+  const IDLE_LIMIT_MS = 10 * 60 * 1000;
+
+  let currentClientId = localStorage.getItem("sac_current_client_id") || null;
+  let selectedTicketId = null;
+  let adminLogged = false;
+  let selectedRating = 0;
+  let lastKnownTicketCount = 0;
+  let lastKnownMessageCount = 0;
+
+  if (EMAILJS_PUBLIC_KEY) {
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+  }
+
+  if (LOGO_URL) {
+    document.getElementById("logoBox").innerHTML = `<img src="${LOGO_URL}" alt="Logo">`;
+  }
+
+  function nowISO(){ return new Date().toISOString(); }
+  function fmtDate(iso){
+    return new Date(iso).toLocaleString("pt-BR", {dateStyle:"short", timeStyle:"medium"});
+  }
+  function moneyTime(ms){
+    const s = Math.max(0, Math.floor(ms/1000));
+    const m = String(Math.floor(s/60)).padStart(2,"0");
+    const r = String(s%60).padStart(2,"0");
+    return `${m}:${r}`;
+  }
+  function uid(){
+    return "SAC-" + Date.now().toString(36).toUpperCase() + "-" + Math.random().toString(36).slice(2,6).toUpperCase();
+  }
+  function getTickets(){
+    return JSON.parse(localStorage.getItem("sac_tickets") || "[]");
+  }
+  function saveTickets(tickets){
+    localStorage.setItem("sac_tickets", JSON.stringify(tickets));
+    renderAll();
+  }
+  function updateTicket(id, updater){
+    const tickets = getTickets();
+    const idx = tickets.findIndex(t => t.id === id);
+    if(idx >= 0){
+      updater(tickets[idx]);
+      saveTickets(tickets);
+    }
+  }
+  function getTicket(id){ return getTickets().find(t => t.id === id); }
+
+  function toggleTheme(){
+    document.body.classList.toggle("light");
+    localStorage.setItem("sac_theme", document.body.classList.contains("light") ? "light" : "dark");
+  }
+  if(localStorage.getItem("sac_theme") === "light") document.body.classList.add("light");
+
+  function showClient(){
+    document.getElementById("clientHome").classList.remove("hidden");
+    document.getElementById("clientPanel").classList.add("hidden");
+    document.getElementById("adminHome").classList.add("hidden");
+  }
+  function showClientPanel(){
+    document.getElementById("clientHome").classList.add("hidden");
+    document.getElementById("clientPanel").classList.remove("hidden");
+    document.getElementById("adminHome").classList.add("hidden");
+  }
+  function showAdmin(){
+    document.getElementById("clientHome").classList.add("hidden");
+    document.getElementById("clientPanel").classList.add("hidden");
+    document.getElementById("adminHome").classList.remove("hidden");
+  }
+
+  function startTicket(){
+    const name = document.getElementById("clientName").value.trim();
+    const doc = document.getElementById("clientDoc").value.trim();
+    const phone = document.getElementById("clientPhone").value.trim();
+    const whatsapp = document.getElementById("clientWhatsapp").value.trim();
+    const problem = document.getElementById("clientProblem").value.trim();
+
+    if(!name || !phone || !problem){
+      alert("Preencha nome/razão social, telefone e descrição do problema.");
+      return;
+    }
+
+    const ticket = {
+      id: uid(),
+      name, doc, phone, whatsapp, problem,
+      status: "waiting",
+      createdAt: nowISO(),
+      startedAt: null,
+      closedAt: null,
+      lastActivityAt: nowISO(),
+      agent: "Atendente",
+      rating: null,
+      ratingComment: "",
+      messages: [
+        {
+          from:"system",
+          text:"Chamado aberto com sucesso. Aguarde na fila. Você será atendido por ordem de chegada.",
+          at: nowISO()
+        },
+        {
+          from:"client",
+          text:"Problema informado: " + problem,
+          at: nowISO()
+        }
+      ],
+      reportSent: false
+    };
+
+    const tickets = getTickets();
+    tickets.push(ticket);
+    saveTickets(tickets);
+
+    currentClientId = ticket.id;
+    localStorage.setItem("sac_current_client_id", currentClientId);
+
+    document.getElementById("clientName").value = "";
+    document.getElementById("clientDoc").value = "";
+    document.getElementById("clientPhone").value = "";
+    document.getElementById("clientWhatsapp").value = "";
+    document.getElementById("clientProblem").value = "";
+
+    beep();
+    showClientPanel();
+    renderAll();
+  }
+
+  function loginAdmin(){
+    const pass = document.getElementById("adminPass").value;
+    if(pass !== ADMIN_PASSWORD){
+      alert("Senha inválida.");
+      return;
+    }
+    adminLogged = true;
+    document.getElementById("adminLogin").classList.add("hidden");
+    document.getElementById("adminDashboard").classList.remove("hidden");
+    renderAll();
+  }
+
+  function callNext(){
+    const tickets = getTickets();
+    const active = tickets.find(t => t.status === "active");
+    if(active){
+      alert("Já existe um cliente em atendimento. Finalize ou cancele antes de chamar o próximo.");
+      selectedTicketId = active.id;
+      renderAll();
+      return;
+    }
+    const next = tickets.filter(t => t.status === "waiting").sort((a,b)=>new Date(a.createdAt)-new Date(b.createdAt))[0];
+    if(!next){
+      alert("Não há clientes aguardando.");
+      return;
+    }
+    updateTicket(next.id, t => {
+      t.status = "active";
+      t.startedAt = nowISO();
+      t.lastActivityAt = nowISO();
+      t.messages.push({
+        from:"system",
+        text:"Você está sendo atendido neste momento. A tolerância de inatividade é de 10 minutos.",
+        at: nowISO()
+      });
+    });
+    selectedTicketId = next.id;
+    beep();
+  }
+
+  function renderAll(){
+    const tickets = getTickets();
+    const waiting = tickets.filter(t=>t.status==="waiting");
+    const active = tickets.filter(t=>t.status==="active");
+    const closedToday = tickets.filter(t=>t.status==="closed" && new Date(t.closedAt).toDateString() === new Date().toDateString());
+
+    document.getElementById("metricQueue").textContent = waiting.length;
+    document.getElementById("metricActive").textContent = active.length;
+    document.getElementById("metricClosed").textContent = closedToday.length;
+
+    renderClient();
+    renderAdmin();
+    monitorNotifications();
+  }
+
+  function renderClient(){
+    if(!currentClientId) return;
+    const ticket = getTicket(currentClientId);
+    if(!ticket){
+      currentClientId = null;
+      localStorage.removeItem("sac_current_client_id");
+      return;
+    }
+
+    const tickets = getTickets();
+    const waitingSorted = tickets.filter(t=>t.status==="waiting").sort((a,b)=>new Date(a.createdAt)-new Date(b.createdAt));
+    const pos = waitingSorted.findIndex(t=>t.id===ticket.id) + 1;
+
+    const statusMap = {
+      waiting:"Aguardando",
+      active:"Em atendimento",
+      closed:"Finalizado",
+      canceled:"Cancelado"
+    };
+
+    document.getElementById("clientPosition").textContent = ticket.status === "waiting" ? pos : "-";
+    document.getElementById("clientStatus").textContent = statusMap[ticket.status] || ticket.status;
+    document.getElementById("clientStatusText").textContent =
+      ticket.status === "waiting"
+      ? `Obrigado, ${ticket.name}. Você está na fila e será atendido por ordem de chegada.`
+      : ticket.status === "active"
+      ? `${ticket.name}, você está sendo atendido neste momento. Inatividade máxima: 10 minutos.`
+      : `${ticket.name}, seu atendimento foi finalizado.`;
+
+    document.getElementById("clientChatBox").classList.toggle("hidden", ticket.status !== "active");
+    document.getElementById("ratingBox").classList.toggle("hidden", ticket.status !== "closed" || ticket.rating);
+
+    renderMessages("clientMessages", ticket.messages);
+
+    if(ticket.status === "active"){
+      const remain = IDLE_LIMIT_MS - (Date.now() - new Date(ticket.lastActivityAt).getTime());
+      document.getElementById("idleTimer").textContent = moneyTime(remain);
+    } else {
+      document.getElementById("idleTimer").textContent = "10:00";
+    }
+
+    renderStars();
+  }
+
+  function renderAdmin(){
+    if(!adminLogged) return;
+
+    const tickets = getTickets();
+    const q = (document.getElementById("ticketSearch")?.value || "").toLowerCase();
+    const list = document.getElementById("adminQueue");
+    const filtered = tickets
+      .filter(t => !q || t.name.toLowerCase().includes(q) || t.phone.includes(q) || t.id.toLowerCase().includes(q))
+      .sort((a,b) => {
+        const rank = {active:0, waiting:1, closed:2, canceled:3};
+        return (rank[a.status]??9)-(rank[b.status]??9) || new Date(a.createdAt)-new Date(b.createdAt);
+      });
+
+    list.innerHTML = filtered.map(t => {
+      const cls = t.status;
+      const pill = t.status === "active" ? "ok" : t.status === "waiting" ? "warn" : t.status === "canceled" ? "danger" : "";
+      const statusText = t.status === "waiting" ? "Aguardando" : t.status === "active" ? "Ativo" : t.status === "closed" ? "Finalizado" : "Cancelado";
+      const unread = t.messages.filter(m => m.from === "client" && !m.readByAdmin).length;
+      return `
+        <div class="ticket ${cls}" onclick="selectTicket('${t.id}')">
+          <div class="ticket-head">
+            <div>
+              <strong>${escapeHtml(t.name)}</strong><br>
+              <small style="color:var(--muted)">${escapeHtml(t.phone)} • ${fmtDate(t.createdAt)}</small>
+            </div>
+            <span class="pill ${pill}">${statusText}</span>
+          </div>
+          <div style="color:var(--muted);font-size:13px">${escapeHtml(t.problem).slice(0,95)}${t.problem.length>95?"...":""}</div>
+          ${unread ? `<span class="pill danger">${unread} nova(s) mensagem(ns)</span>` : ""}
+        </div>`;
+    }).join("") || `<div style="color:var(--muted);padding:20px;text-align:center">Nenhum chamado encontrado.</div>`;
+
+    if(selectedTicketId){
+      const selected = getTicket(selectedTicketId);
+      if(selected){
+        document.getElementById("adminSelectedEmpty").classList.add("hidden");
+        document.getElementById("adminChatArea").classList.remove("hidden");
+        document.getElementById("selectedActions").classList.remove("hidden");
+        document.getElementById("adminTicketTitle").textContent = selected.name;
+        document.getElementById("adminTicketInfo").textContent =
+          `${selected.id} • Tel: ${selected.phone} ${selected.whatsapp ? "• WhatsApp: " + selected.whatsapp : ""} ${selected.doc ? "• Doc: " + selected.doc : ""}`;
+        renderMessages("adminMessages", selected.messages);
+        const remain = IDLE_LIMIT_MS - (Date.now() - new Date(selected.lastActivityAt).getTime());
+        document.getElementById("adminIdlePill").textContent = selected.status === "active" ? `Inatividade: ${moneyTime(remain)}` : "Atendimento não ativo";
+
+        updateTicket(selected.id, t => {
+          t.messages.forEach(m => { if(m.from === "client") m.readByAdmin = true; });
+        });
+      }
+    }
+  }
+
+  function selectTicket(id){
+    selectedTicketId = id;
+    renderAll();
+  }
+
+  function renderMessages(containerId, messages){
+    const el = document.getElementById(containerId);
+    if(!el) return;
+    el.innerHTML = messages.map(m => `
+      <div class="msg ${m.from}">
+        ${escapeHtml(m.text)}
+        <small>${m.from === "client" ? "Cliente" : m.from === "agent" ? "Atendente" : "Sistema"} • ${fmtDate(m.at)}</small>
+      </div>
+    `).join("");
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function sendClientMessage(){
+    const input = document.getElementById("clientMsg");
+    const text = input.value.trim();
+    if(!text || !currentClientId) return;
+    const ticket = getTicket(currentClientId);
+    if(!ticket || ticket.status !== "active"){
+      alert("Você só pode enviar mensagens quando estiver em atendimento.");
+      return;
+    }
+    updateTicket(currentClientId, t => {
+      t.messages.push({from:"client", text, at:nowISO(), readByAdmin:false});
+      t.lastActivityAt = nowISO();
+    });
+    input.value = "";
+    beep();
+  }
+
+  function sendAdminMessage(){
+    const input = document.getElementById("adminMsg");
+    const text = input.value.trim();
+    if(!text || !selectedTicketId) return;
+    const ticket = getTicket(selectedTicketId);
+    if(!ticket || ticket.status !== "active"){
+      alert("Este atendimento não está ativo.");
+      return;
+    }
+    updateTicket(selectedTicketId, t => {
+      t.messages.push({from:"agent", text, at:nowISO()});
+      t.lastActivityAt = nowISO();
+    });
+    input.value = "";
+  }
+
+  function finishSelected(){
+    if(!selectedTicketId) return alert("Selecione um atendimento.");
+    const ticket = getTicket(selectedTicketId);
+    if(!ticket) return;
+    updateTicket(selectedTicketId, t => {
+      t.status = "closed";
+      t.closedAt = nowISO();
+      t.messages.push({from:"system", text:"Atendimento finalizado. Por favor, avalie o atendimento.", at:nowISO()});
+    });
+    sendSelectedReport();
+  }
+
+  function cancelSelected(){
+    if(!selectedTicketId) return;
+    if(!confirm("Deseja cancelar este atendimento?")) return;
+    updateTicket(selectedTicketId, t => {
+      t.status = "canceled";
+      t.closedAt = nowISO();
+      t.messages.push({from:"system", text:"Atendimento cancelado pelo atendente.", at:nowISO()});
+    });
+  }
+
+  function renderStars(){
+    const box = document.getElementById("stars");
+    if(!box) return;
+    box.innerHTML = "";
+    for(let i=1;i<=5;i++){
+      const span = document.createElement("span");
+      span.className = "star" + (i <= selectedRating ? " active" : "");
+      span.textContent = "★";
+      span.onclick = () => { selectedRating = i; renderStars(); };
+      box.appendChild(span);
+    }
+  }
+
+  function sendRating(){
+    if(!currentClientId) return;
+    if(!selectedRating) return alert("Selecione uma nota de 1 a 5 estrelas.");
+    const comment = document.getElementById("ratingComment").value.trim();
+    updateTicket(currentClientId, t => {
+      t.rating = selectedRating;
+      t.ratingComment = comment;
+      t.messages.push({from:"system", text:`Avaliação recebida: ${selectedRating} estrela(s). Obrigado!`, at:nowISO()});
+    });
+    alert("Avaliação enviada. Obrigado!");
+    localStorage.removeItem("sac_current_client_id");
+  }
+
+  function clearClosed(){
+    if(!confirm("Remover chamados finalizados/cancelados do painel?")) return;
+    saveTickets(getTickets().filter(t => t.status !== "closed" && t.status !== "canceled"));
+    selectedTicketId = null;
+  }
+
+  function checkIdle(){
+    const tickets = getTickets();
+    let changed = false;
+    tickets.forEach(t => {
+      if(t.status === "active"){
+        const idle = Date.now() - new Date(t.lastActivityAt).getTime();
+        if(idle >= IDLE_LIMIT_MS){
+          t.status = "closed";
+          t.closedAt = nowISO();
+          t.messages.push({
+            from:"system",
+            text:"Atendimento encerrado automaticamente por inatividade superior a 10 minutos.",
+            at:nowISO()
+          });
+          changed = true;
+        }
+      }
+    });
+    if(changed) saveTickets(tickets);
+  }
+
+  function generatePdf(ticket){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const line = (y) => { doc.setDrawColor(210); doc.line(15,y,195,y); };
+    let y = 18;
+
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(18);
+    doc.text(`${COMPANY_NAME} - Relatório de Atendimento`, 15, y);
+    y += 8;
+    line(y); y += 10;
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica","normal");
+    const rows = [
+      ["Protocolo", ticket.id],
+      ["Cliente", ticket.name],
+      ["CPF/CNPJ", ticket.doc || "Não informado"],
+      ["Telefone", ticket.phone],
+      ["WhatsApp", ticket.whatsapp || "Não informado"],
+      ["Problema", ticket.problem],
+      ["Aberto em", fmtDate(ticket.createdAt)],
+      ["Iniciado em", ticket.startedAt ? fmtDate(ticket.startedAt) : "Não iniciado"],
+      ["Finalizado em", ticket.closedAt ? fmtDate(ticket.closedAt) : "Não finalizado"],
+      ["Status", ticket.status],
+      ["Avaliação", ticket.rating ? `${ticket.rating}/5` : "Não avaliado"],
+      ["Comentário", ticket.ratingComment || "Sem comentário"]
+    ];
+
+    rows.forEach(([k,v]) => {
+      doc.setFont("helvetica","bold"); doc.text(`${k}:`, 15, y);
+      doc.setFont("helvetica","normal");
+      const split = doc.splitTextToSize(String(v), 130);
+      doc.text(split, 55, y);
+      y += Math.max(8, split.length * 6);
+      if(y > 275){ doc.addPage(); y = 18; }
+    });
+
+    y += 5; line(y); y += 10;
+    doc.setFont("helvetica","bold"); doc.text("Histórico da conversa", 15, y); y += 8;
+    doc.setFont("helvetica","normal");
+
+    ticket.messages.forEach(m => {
+      const who = m.from === "client" ? "Cliente" : m.from === "agent" ? "Atendente" : "Sistema";
+      const text = `[${fmtDate(m.at)}] ${who}: ${m.text}`;
+      const split = doc.splitTextToSize(text, 178);
+      if(y + split.length*6 > 285){ doc.addPage(); y = 18; }
+      doc.text(split, 15, y);
+      y += split.length * 6 + 4;
+    });
+
+    return doc;
+  }
+
+  function reportSubject(ticket){
+    return `Relatório ${ticket.name} - ${fmtDate(ticket.closedAt || nowISO())}`;
+  }
+
+  function downloadSelectedPdf(){
+    if(!selectedTicketId) return alert("Selecione um atendimento.");
+    const ticket = getTicket(selectedTicketId);
+    const doc = generatePdf(ticket);
+    doc.save(`${reportSubject(ticket).replace(/[\\/:*?"<>|]/g,"-")}.pdf`);
+  }
+
+  async function sendSelectedReport(){
+    if(!selectedTicketId) return alert("Selecione um atendimento.");
+    const ticket = getTicket(selectedTicketId);
+    await sendReport(ticket);
+  }
+
+  async function sendReport(ticket){
+    const doc = generatePdf(ticket);
+    const filename = `${reportSubject(ticket).replace(/[\\/:*?"<>|]/g,"-")}.pdf`;
+
+    if(!EMAILJS_PUBLIC_KEY || !EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID){
+      doc.save(filename);
+      alert("PDF gerado. Para envio automático por e-mail, configure o EmailJS no código.");
+      return;
+    }
+
+    const pdfBase64 = doc.output("datauristring");
+
+    try{
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        to_email: REPORT_EMAIL,
+        subject: reportSubject(ticket),
+        client_name: ticket.name,
+        report_pdf: pdfBase64,
+        message: `Segue relatório do atendimento ${ticket.id}.`
+      });
+
+      updateTicket(ticket.id, t => t.reportSent = true);
+      alert("Relatório enviado para " + REPORT_EMAIL);
+    }catch(err){
+      console.error(err);
+      doc.save(filename);
+      alert("Não foi possível enviar o e-mail. O PDF foi baixado localmente.");
+    }
+  }
+
+  function monitorNotifications(){
+    if(!adminLogged) return;
+    const tickets = getTickets();
+    const openTickets = tickets.filter(t => t.status === "waiting" || t.status === "active").length;
+    const msgCount = tickets.reduce((sum,t)=>sum + t.messages.length, 0);
+
+    if(lastKnownTicketCount && openTickets > lastKnownTicketCount) beep();
+    if(lastKnownMessageCount && msgCount > lastKnownMessageCount) beep();
+
+    lastKnownTicketCount = openTickets;
+    lastKnownMessageCount = msgCount;
+  }
+
+  function beep(){
+    try{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = 880;
+      gain.gain.value = 0.06;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      setTimeout(() => { osc.stop(); ctx.close(); }, 180);
+    }catch(e){}
+  }
+
+  function escapeHtml(str){
+    return String(str || "").replace(/[&<>"']/g, s => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[s]));
+  }
+
+  setInterval(() => {
+    checkIdle();
+    renderAll();
+  }, 1000);
+
+  renderAll();
+  if(currentClientId) showClientPanel();
+</script>
+</body>
+</html>
